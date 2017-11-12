@@ -19,60 +19,66 @@ import com.jogamp.opengl.util.GLBuffers;
 
 public class Volume2DTexture extends AbstractComposite {
 
-	private ColorMapper mapper = new ColorMapper(new ColorMapRainbow(), 25, 128);
+	private ColorMapper mapper;
+	private IAlphaMapper aMapper;
 	
-	public Volume2DTexture(short[] data, int[] shape) {
+	public Volume2DTexture(short[] data, int[] shape, Coord3d start, Coord3d stop,
+			ColorMapper mapper, IAlphaMapper aMapper) {
 		
-		Coord3d position = new Coord3d(2.0, 2.0, 2.0);
-		float offset = 0;
-    	float width = 2.0f;
-
+		this.mapper = mapper;
+		this.aMapper = aMapper;
+		Coord3d dif = stop.sub(start);
+		Coord3d centre = dif.div(2);
+		float widthx = dif.x/2;
+		float widthy = dif.y/2;
+		float widthz = dif.z/2;
+		
     	List<Coord2d> zmapping  = new ArrayList<Coord2d>(4);
-    	zmapping.add( new Coord2d(position.x-width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y+width) );
-    	zmapping.add( new Coord2d(position.x-width, position.y+width) );
+    	zmapping.add(new Coord2d(centre.x-widthx, centre.y-widthy));
+    	zmapping.add(new Coord2d(centre.x+widthx, centre.y-widthy));
+    	zmapping.add(new Coord2d(centre.x+widthx, centre.y+widthy));
+    	zmapping.add(new Coord2d(centre.x-widthx, centre.y+widthy));
 		
 		ByteBuffer[] ims = makeImagesX(data, shape);
-    	
+		float offsetz = centre.z-widthz;
     	for (ByteBuffer b : ims) {
     		ColorMappedTexture t = new ColorMappedTexture(b,shape[1],shape[2]);
-    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.Z, offset, zmapping);
+    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.Z, offsetz, zmapping);
     		north.setAlphaFactor(1f);
     		add(north);
-    		offset+=4.0/ims.length;    	
+    		offsetz+=(widthz*2)/ims.length;    	
     	}
 
     	ByteBuffer[] imsz = makeImagesZ(data, shape);
 
-    	zmapping  = new ArrayList<Coord2d>(4);
-    	zmapping.add( new Coord2d(position.x-width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y+width) );
-    	zmapping.add( new Coord2d(position.x-width, position.y+width) );
-    	offset = 0;
+    	List<Coord2d> xmapping  = new ArrayList<Coord2d>(4);
+    	xmapping.add( new Coord2d(centre.y-widthy, centre.z-widthz) );
+    	xmapping.add( new Coord2d(centre.y+widthy, centre.z-widthz) );
+    	xmapping.add( new Coord2d(centre.y+widthy, centre.z+widthz) );
+    	xmapping.add( new Coord2d(centre.y-widthy, centre.z+widthz) );
+    	float offsetx = centre.x-widthx;
     	for (ByteBuffer b : imsz) {
     		ColorMappedTexture t = new ColorMappedTexture(b,shape[0],shape[1]);
-    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.X, offset, zmapping);
+    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.X, offsetx, xmapping);
     		north.setAlphaFactor(0.5f);
     		add(north);
-    		offset+=4.0/imsz.length;    	
+    		offsetx+=(widthx*2)/imsz.length;    	
     	}
     	
     	ByteBuffer[] imsy = makeImagesY(data, shape);
 
-    	zmapping  = new ArrayList<Coord2d>(4);
-    	zmapping.add( new Coord2d(position.x-width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y-width) );
-    	zmapping.add( new Coord2d(position.x+width, position.y+width) );
-    	zmapping.add( new Coord2d(position.x-width, position.y+width) );
-    	offset = 0;
+    	List<Coord2d> ymapping  = new ArrayList<Coord2d>(4);
+    	ymapping.add( new Coord2d(centre.x-widthx, centre.z-widthz) );
+    	ymapping.add( new Coord2d(centre.x+widthx, centre.z-widthz) );
+    	ymapping.add( new Coord2d(centre.x+widthx, centre.z+widthz) );
+    	ymapping.add( new Coord2d(centre.x-widthx, centre.z+widthz) );
+    	float offsety = centre.y-widthy;
     	for (ByteBuffer b : imsy) {
     		ColorMappedTexture t = new ColorMappedTexture(b,shape[0],shape[2]);
-    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.Y, offset, zmapping);
+    		DrawableTexture north = new DrawableTexture(t, PlaneAxis.Y, offsety, ymapping);
     		north.setAlphaFactor(0.5f);
     		add(north);
-    		offset+=4.0/imsy.length;    	
+    		offsety+=(widthy*2)/imsy.length; 	
     	}	
 	}
 	
@@ -144,12 +150,8 @@ public class Volume2DTexture extends AbstractComposite {
 		 image.put((byte)(c.r*255));
 		 image.put((byte)(c.g*255));
 		 image.put((byte)(c.b*255));
-		 if (b > 25) {
-			 image.put((byte)(32));
-		 } else {
-			 image.put((byte)(0));
-		 }
-//		 image.put((byte)(6));
+		 image.put((byte)(255*aMapper.getAlpha(b)));
+		 
     }
 	
 	@Override

@@ -6,7 +6,11 @@ import java.io.ObjectInputStream;
 import org.jzy3d.analysis.AbstractAnalysis;
 import org.jzy3d.analysis.AnalysisLauncher;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
+import org.jzy3d.colors.ColorMapper;
+import org.jzy3d.colors.colormaps.ColorMapRainbow;
+import org.jzy3d.maths.Coord3d;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
+import org.jzy3d.plot3d.rendering.textures.SimpleAlphaMapper;
 import org.jzy3d.plot3d.rendering.textures.Volume2DTexture;
 
 public class TextureVolumeDemo extends AbstractAnalysis {
@@ -31,7 +35,11 @@ public class TextureVolumeDemo extends AbstractAnalysis {
 			return;
 		}
     	
-    	Volume2DTexture volume = new Volume2DTexture(s,shape);
+    	Coord3d start = new Coord3d(5, 5, 5);
+    	Coord3d stop = new Coord3d(10, 10, 10);
+    	SimpleAlphaMapper am = new SimpleAlphaMapper(25,1000);
+    	ColorMapper mapper = new ColorMapper(new ColorMapRainbow(), 25, 128);
+    	Volume2DTexture volume = new Volume2DTexture(s,shape,start,stop,mapper,am);
 
     	chart.getScene().getGraph().add(volume);
     	
