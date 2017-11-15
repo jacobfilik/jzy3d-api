@@ -38,8 +38,10 @@ public class Volume2DTexture extends AbstractComposite {
     	zmapping.add(new Coord2d(centre.x+widthx, centre.y-widthy));
     	zmapping.add(new Coord2d(centre.x+widthx, centre.y+widthy));
     	zmapping.add(new Coord2d(centre.x-widthx, centre.y+widthy));
+    	
+    	Coord3d step = new Coord3d((stop.x-start.x)/shape[0], (stop.y-start.y)/shape[1],(stop.z-start.z)/shape[2]);
 		
-		ByteBuffer[] ims = makeImagesX(data, shape);
+		ByteBuffer[] ims = makeImagesX(data, shape, start, step);
 		float offsetz = centre.z-widthz;
     	for (ByteBuffer b : ims) {
     		ColorMappedTexture t = new ColorMappedTexture(b,shape[1],shape[2]);
@@ -49,7 +51,7 @@ public class Volume2DTexture extends AbstractComposite {
     		offsetz+=(widthz*2)/ims.length;    	
     	}
 
-    	ByteBuffer[] imsz = makeImagesZ(data, shape);
+    	ByteBuffer[] imsz = makeImagesZ(data, shape, start, step);
 
     	List<Coord2d> xmapping  = new ArrayList<Coord2d>(4);
     	xmapping.add( new Coord2d(centre.y-widthy, centre.z-widthz) );
@@ -65,7 +67,7 @@ public class Volume2DTexture extends AbstractComposite {
     		offsetx+=(widthx*2)/imsz.length;    	
     	}
     	
-    	ByteBuffer[] imsy = makeImagesY(data, shape);
+    	ByteBuffer[] imsy = makeImagesY(data, shape, start, step);
 
     	List<Coord2d> ymapping  = new ArrayList<Coord2d>(4);
     	ymapping.add( new Coord2d(centre.x-widthx, centre.z-widthz) );
@@ -82,16 +84,20 @@ public class Volume2DTexture extends AbstractComposite {
     	}	
 	}
 	
-	private ByteBuffer[] makeImagesX(short[] buffer, int[] shape) {
+	private ByteBuffer[] makeImagesX(short[] buffer, int[] shape, Coord3d start, Coord3d step) {
 
     	 ByteBuffer[] buffers = new ByteBuffer[shape[0]];
+    	 
+    	 Coord3d current = new Coord3d(start.toArray());
+//    	 Coord3d step = new Coord3d((stop.x-start.x)/shape[0], (stop.y-start.y)/shape[1],(stop.z-start.z)/shape[2]);
  
     	 for (int i = 0; i < shape[0]; i++) {
     		 ByteBuffer image = GLBuffers.newDirectByteBuffer( shape[1] * shape[2] * 4);
     		 for (int j = 0; j < shape[1]; j++) {
     			 for (int k = 0; k < shape[2]; k++) {
     				 int pos = k+((shape[2])*j)+(shape[1]*shape[2]*i); 
-    				 putValue(buffer, image, pos); 
+    				 current.set(start.x+step.x*i, start.y+step.y*j, start.z+step.z*k);
+    				 putValue(buffer, image, pos, current); 
     			 }	
     		 }
     		 image.rewind();
@@ -103,15 +109,18 @@ public class Volume2DTexture extends AbstractComposite {
 
     }
 	
-	private ByteBuffer[] makeImagesY(short[] buffer, int[] shape) {
+	private ByteBuffer[] makeImagesY(short[] buffer, int[] shape, Coord3d start, Coord3d step) {
 
+		Coord3d current = new Coord3d(start.toArray());
+		
     	 ByteBuffer[] buffers = new ByteBuffer[shape[1]];
     	 for (int j = 0; j < shape[1]; j++) {
     		 ByteBuffer image = GLBuffers.newDirectByteBuffer( shape[0] * shape[2] * 4);
     		 for (int i = 0; i < shape[0]; i++) {
     			 for (int k = 0; k < shape[2]; k++) {
-    				 int pos = k+((shape[2])*j)+(shape[1]*shape[2]*i); 
-    				 putValue(buffer, image, pos);
+    				 int pos = k+((shape[2])*j)+(shape[1]*shape[2]*i);
+    				 current.set(start.x+step.x*i, start.y+step.y*j, start.z+step.z*k);
+    				 putValue(buffer, image, pos, current);
     			 }	
     		 }
     		 image.rewind();
@@ -123,15 +132,18 @@ public class Volume2DTexture extends AbstractComposite {
 
     }
     
-    private ByteBuffer[] makeImagesZ(short[] buffer, int[] shape) {
+    private ByteBuffer[] makeImagesZ(short[] buffer, int[] shape, Coord3d start, Coord3d step) {
 
+    	Coord3d current = new Coord3d(start.toArray());
+    	
     	 ByteBuffer[] buffers = new ByteBuffer[shape[2]];
     	 for (int k = 0; k < shape[2]; k++) {
     		 ByteBuffer image = GLBuffers.newDirectByteBuffer( shape[0] * shape[1] * 4);
     		 for (int i = 0; i < shape[0]; i++) {
     			 for (int j = 0; j< shape[1]; j++) {
     				 int pos = k+((shape[2])*j)+(shape[1]*shape[2]*i); 
-    				 putValue(buffer, image, pos);
+    				 current.set(start.x+step.x*i, start.y+step.y*j, start.z+step.z*k);
+    				 putValue(buffer, image, pos, current);
     			 }	
     		 }
     		 image.rewind();
@@ -151,6 +163,30 @@ public class Volume2DTexture extends AbstractComposite {
 		 image.put((byte)(c.g*255));
 		 image.put((byte)(c.b*255));
 		 image.put((byte)(255*aMapper.getAlpha(b)));
+		 
+    }
+	
+	private void putValue(short[] buffer, ByteBuffer image, int pos, Coord3d location) {
+//    	System.out.println(pos);
+    	float b = buffer[pos];
+    	Color c = mapper.getColor(b);
+		 image.put((byte)(c.r*255));
+		 image.put((byte)(c.g*255));
+		 image.put((byte)(c.b*255));
+		 if (location.x > 7.5 && location.y > 7.5 && location.z > 7.5 ) {
+//			 image.put((byte)0);
+			 image.put((byte)(255*aMapper.getAlpha(b))); 
+		 } else if (location.x < 7.5 && location.x > 7.44) {
+			 image.put((byte)255);
+		 }else if (location.y < 7.5 && location.y > 7.44) {
+			 image.put((byte)255);
+		 }else if (location.z < 7.5 && location.z > 7.44) {
+			 image.put((byte)255);
+		 }else {
+			 image.put((byte)20);
+//			 image.put((byte)(255*aMapper.getAlpha(b))); 
+		 }
+		 
 		 
     }
 	
