@@ -50,7 +50,7 @@ public class QuadGLSL extends Polygon {
     	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
     	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
     	
-    	String  vertex = "#version 330\n uniform mat4 gl_ModelViewMatrix; uniform mat4 gl_ProjectionMatrix; in vec4 vVertex; in vec4 vColor; out vec4 vVaryingColor; void main() { vVaryingColor=vec4(0,1,0,1); gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vVertex;}";
+    	String  vertex = "#version 330\n uniform mat4 gl_ModelViewMatrix; uniform mat4 gl_ProjectionMatrix;in vec4 vt;in vec4 color; out vec4 vVaryingColor; void main() { vVaryingColor=color; if (vt.z == 0) {vVaryingColor=vec4(0,0,1,1);}; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
     	String  fragment = "#version 330\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { vFragColor=vVaryingColor;}";
     	
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
