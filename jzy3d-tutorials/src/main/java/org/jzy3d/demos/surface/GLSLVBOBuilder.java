@@ -44,20 +44,45 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 		    	float mvmatrix[] = new float[16];
 		    	float projmatrix[] = new float[16];
 		    	
+		    	String glGetString = gl.glGetString(GL.GL_VERSION);
+		    	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
 		    	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
 		    	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
 
 		    	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
 		    	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
 		    	
-		    	String  vertex = "#version 330\n uniform mat4 gl_ModelViewMatrix; uniform mat4 gl_ProjectionMatrix;in vec4 vt;in vec4 color; out vec4 vVaryingColor; void main() { vVaryingColor=color; if (vt.z == 0) {vVaryingColor=vec4(0,0,1,1);}; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
-		    	String  fragment = "#version 330\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { vFragColor=vVaryingColor;}";
+		    	String  vertex = "#version 110\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; in vec4 color; out vec4 vVaryingColor; void main() { vVaryingColor=vec4(1,0,0,1);; if (vt.z == 0f) {vVaryingColor=vec4(0,0,1,1);}; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
+		    	String  fragment = "#version 110\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { if (vVaryingColor.r < 0.9 && vVaryingColor.b < 0.9)  {vFragColor =vec4(1,1,1,1); }else {vFragColor=vVaryingColor;}}";
 		    	
 		    	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
 		    	gl.getGL2().glCompileShader(vertexShaderID);
 		    	
+		    	 int[] compileStatus = new int[] { 0 };
+		         int[] logLength = new int[] { 0 };
+
+		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
+		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+		         
+		         int ERROR_BUFFER_SIZE = 8192;
+		 		byte[] errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
+		 		int[] messageLength = new int[1]; 
+		 		gl.getGL2().glGetShaderInfoLog(vertexShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
+		 		String t = new String(errorBuffer);
+		    	
 		    	gl.getGL2().glShaderSource(fragmentShaderID, 1, new String[] {fragment} , null);
 		    	gl.getGL2().glCompileShader(fragmentShaderID);
+		    	
+		    	compileStatus = new int[] { 0 };
+		        logLength = new int[] { 0 };
+
+		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
+		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+
+		 		errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
+		 		messageLength = new int[1]; 
+		 		gl.getGL2().glGetShaderInfoLog(fragmentShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
+		 		t = new String(errorBuffer);
 		    	
 		    	 int glProgram = gl.getGL2().glCreateProgram();
 		    	 gl.getGL2().glAttachShader(glProgram, vertexShaderID);
@@ -73,10 +98,10 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 		    	 gl.getGL2().glUseProgram(glProgram);
 		    	 
 		    	 
-		    	 int id = gl.getGL2().glGetUniformLocation(glProgram, "gl_ModelViewMatrix");
+		    	 int id = gl.getGL2().glGetUniformLocation(glProgram, "modelViewMatrix");
 		         gl.getGL2().glUniform4fv(id, 1, mvmatrix, 0);
 		         
-		         int idp = gl.getGL2().glGetUniformLocation(glProgram, "gl_ProjectionMatrix");
+		         int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
 		         gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
 				
 				
