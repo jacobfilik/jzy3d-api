@@ -34,13 +34,13 @@ public class SurfaceDemoGLSL extends AbstractAnalysis {
     	
     	DrawableVBO vbo = GLSLVBOBuilder.buildShape(new float[] {0,1},new float[] {0,1}, new float[] {0,1,1,0}, m);
     	
-    	QuadGLSL q = new QuadGLSL();
-    	q.add(new Point(new Coord3d(0, 0, 0)));
-    	q.add(new Point(new Coord3d(0, 1, 0)));
-    	q.add(new Point(new Coord3d(1, 1, 1)));
-    	q.add(new Point(new Coord3d(0, 0, 1)));
-    	q.setColor(new Color(255,0,0));
-    	q.setWireframeColor(new Color(255,0,0));
+//    	QuadGLSL q = new QuadGLSL();
+//    	q.add(new Point(new Coord3d(0, 0, 0)));
+//    	q.add(new Point(new Coord3d(0, 1, 0)));
+//    	q.add(new Point(new Coord3d(1, 1, 1)));
+//    	q.add(new Point(new Coord3d(0, 0, 1)));
+//    	q.setColor(new Color(255,0,0));
+//    	q.setWireframeColor(new Color(255,0,0));
 
         // Create a chart
         chart = AWTChartComponentFactory.chart(Quality.Intermediate, getCanvasType());

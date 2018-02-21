@@ -14,6 +14,7 @@ import org.jzy3d.plot3d.primitives.vbo.builders.VBOBuilder;
 import org.jzy3d.plot3d.primitives.vbo.drawable.DrawableVBO;
 import org.jzy3d.plot3d.rendering.view.Camera;
 
+import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.glu.GLU;
@@ -52,8 +53,8 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 		    	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
 		    	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
 		    	
-		    	String  vertex = "#version 110\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; in vec4 color; out vec4 vVaryingColor; void main() { vVaryingColor=vec4(1,0,0,1);; if (vt.z == 0f) {vVaryingColor=vec4(0,0,1,1);}; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
-		    	String  fragment = "#version 110\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { if (vVaryingColor.r < 0.9 && vVaryingColor.b < 0.9)  {vFragColor =vec4(1,1,1,1); }else {vFragColor=vVaryingColor;}}";
+		    	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
+		    	String  fragment = "#version 130\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { if (vVaryingColor.r < 0.9 && vVaryingColor.g < 0.9)  {vFragColor =vec4(1,1,1,1); }else {vFragColor=vVaryingColor;}}";
 		    	
 		    	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
 		    	gl.getGL2().glCompileShader(vertexShaderID);
@@ -127,6 +128,16 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 				
 				gl.getGL2().glUseProgramObjectARB(0);
 			}
+			
+//			@Override
+//			protected void color(GL gl) {
+//				int p = 3 * Buffers.SIZEOF_FLOAT;
+////	            gl.getGL2().glEnableClientState(GL2.GL_COLOR_ARRAY);
+//	            gl.getGL2().glColorPointer(colorChannelNumber, GL.GL_FLOAT, byteOffset, p);
+//				gl.getGL2().glEnableVertexAttribArray(0);
+//				gl.getGL2().glVertexAttribPointer(0, colorChannelNumber, GL.GL_FLOAT, false, 0, 0);
+//			}
+			
 			
 			 @Override
 			    public void mount(GL gl) {
@@ -403,7 +414,7 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 			        	if (c.z > maxZ) maxZ = c.z;
 						
 			            putCoord(vertices, c);
-			            putColor(vertices, colors.getColor(c));
+			            putColor(vertices, new Color(0,255,0,0));
 						
 						indices.put(size++);
 						c.x = x[xi];
@@ -414,7 +425,7 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 			        	if (c.z > maxZ) maxZ = c.z;
 						
 			            putCoord(vertices, c);
-			            putColor(vertices, colors.getColor(c));
+			            putColor(vertices, new Color(0,255,0,0));
 			            
 			            indices.put(size++);
 						c.x = x[xi+1];
@@ -425,7 +436,7 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 			        	if (c.z > maxZ) maxZ = c.z;
 						
 			            putCoord(vertices, c);
-			            putColor(vertices, colors.getColor(c));
+			            putColor(vertices, new Color(255,0,0,0));
 			            
 			            
 			            indices.put(size++);
@@ -437,7 +448,7 @@ public static DrawableVBO buildShape(float[] x, float[] y, float[] z, ColorMappe
 			        	if (c.z > maxZ) maxZ = c.z;
 						
 			            putCoord(vertices, c);
-			            putColor(vertices, colors.getColor(c));
+			            putColor(vertices, new Color(255,0,0,0));
 			            
 					}
 				}	
