@@ -2,7 +2,9 @@ package org.jzy3d.demos.waterfall;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
+import java.util.Arrays;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.jzy3d.analysis.AbstractAnalysis;
 import org.jzy3d.analysis.AnalysisLauncher;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
@@ -41,6 +43,8 @@ public class Texture3DVolumeDemo extends AbstractAnalysis {
     	for (int i = 0; i < s.length; i++) {
     		b[i] = (byte)s[i];
     	}
+    	
+//    	Arrays.fill(b, (byte)64);
     	
     	Texture3D t3d = new Texture3D(GLBuffers.newDirectByteBuffer(b), shape);
 //    	Coord3d start = new Coord3d(5, 5, 5);

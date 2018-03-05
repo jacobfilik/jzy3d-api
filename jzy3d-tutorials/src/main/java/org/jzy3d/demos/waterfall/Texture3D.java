@@ -68,6 +68,9 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
 	public void setTextureData(final GL gl, Buffer buffer, int[] shape) {
 		gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 		gl.getGL2().glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL.GL_LUMINANCE, shape[0], shape[1], shape[2], 0, GL2ES2.GL_LUMINANCE, GL.GL_BYTE, buffer);
+		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE);
+		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL.GL_CLAMP_TO_EDGE);
 	}
 	
 	private boolean validateTexID(final GL gl, final boolean throwException) {
@@ -102,8 +105,9 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
-    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
-    	
+//    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
+    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor; test.x = 0.5;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; if (value.b == 0.0) {vFragColor = vec4(1,0,0,1);} else {vFragColor = value;}}";
+    
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
     	gl.getGL2().glCompileShader(vertexShaderID);
     	
@@ -201,68 +205,70 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
 				
 				doTransform(gl, glu, cam);
 		    	
-		    	float mvmatrix[] = new float[16];
-		    	float projmatrix[] = new float[16];
-		    	
-		    	String glGetString = gl.glGetString(GL.GL_VERSION);
-		    	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
-		    	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
-		    	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
-
-		    	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
-		    	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
-		    	
-		    	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
-		    	String  fragment = "#version 130\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { if (vVaryingColor.r < 0.9 && vVaryingColor.g < 0.9)  {vFragColor =vec4(1,1,1,1); }else {vFragColor=vVaryingColor;}}";
-		    	
-		    	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
-		    	gl.getGL2().glCompileShader(vertexShaderID);
-		    	
-		    	 int[] compileStatus = new int[] { 0 };
-		         int[] logLength = new int[] { 0 };
-
-		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
-		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
-		         
-		         int ERROR_BUFFER_SIZE = 8192;
-		 		byte[] errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
-		 		int[] messageLength = new int[1]; 
-		 		gl.getGL2().glGetShaderInfoLog(vertexShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
-		 		String t = new String(errorBuffer);
-		    	
-		    	gl.getGL2().glShaderSource(fragmentShaderID, 1, new String[] {fragment} , null);
-		    	gl.getGL2().glCompileShader(fragmentShaderID);
-		    	
-		    	compileStatus = new int[] { 0 };
-		        logLength = new int[] { 0 };
-
-		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
-		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
-
-		 		errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
-		 		messageLength = new int[1]; 
-		 		gl.getGL2().glGetShaderInfoLog(fragmentShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
-		 		t = new String(errorBuffer);
-		    	
-		    	 int glProgram = gl.getGL2().glCreateProgram();
-		    	 gl.getGL2().glAttachShader(glProgram, vertexShaderID);
-		    	 gl.getGL2().glAttachShader(glProgram, fragmentShaderID);
-		    	 gl.getGL2().glLinkProgram(glProgram);
-		    	
-		    	 gl.getGL2().glDetachShader(glProgram, vertexShaderID);
-		    	 gl.getGL2().glDetachShader(glProgram, fragmentShaderID);
-		    		
-		    	 gl.getGL2().glDeleteShader(vertexShaderID);
-		    	 gl.getGL2().glDeleteShader(fragmentShaderID);
-
-		    	 gl.getGL2().glUseProgram(glProgram);
-		    	 
-		    	 
-		    	 int id = gl.getGL2().glGetUniformLocation(glProgram, "modelViewMatrix");
-		         gl.getGL2().glUniform4fv(id, 1, mvmatrix, 0);
-		         
-		         int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
-		         gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
+//		    	float mvmatrix[] = new float[16];
+//		    	float projmatrix[] = new float[16];
+//		    	
+//		    	String glGetString = gl.glGetString(GL.GL_VERSION);
+//		    	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
+//		    	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
+//		    	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
+//
+//		    	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
+//		    	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
+//		    	
+//		    	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
+////		    	String  fragment = "#version 130\n in vec4 vVaryingColor; out vec4 vFragColor; void main() { if (vVaryingColor.r < 0.9 && vVaryingColor.g < 0.9)  {vFragColor =vec4(1,1,1,1); }else {vFragColor=vVaryingColor;}}";
+////		    	String  fragment = "#version 130\n in vec4 vVaryingColor; out vec4 vFragColor; void main() {vFragColor=vVaryingColor}";
+//		    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor; test.b = 0.3;vec4 value = texture3D(volumeTexture,vec3(test)); value.a = 1; vFragColor = value;}";
+//		    	
+//		    	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
+//		    	gl.getGL2().glCompileShader(vertexShaderID);
+//		    	
+//		    	 int[] compileStatus = new int[] { 0 };
+//		         int[] logLength = new int[] { 0 };
+//
+//		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
+//		         gl.getGL2().glGetShaderiv(vertexShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+//		         
+//		         int ERROR_BUFFER_SIZE = 8192;
+//		 		byte[] errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
+//		 		int[] messageLength = new int[1]; 
+//		 		gl.getGL2().glGetShaderInfoLog(vertexShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
+//		 		String t = new String(errorBuffer);
+//		    	
+//		    	gl.getGL2().glShaderSource(fragmentShaderID, 1, new String[] {fragment} , null);
+//		    	gl.getGL2().glCompileShader(fragmentShaderID);
+//		    	
+//		    	compileStatus = new int[] { 0 };
+//		        logLength = new int[] { 0 };
+//
+//		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_COMPILE_STATUS, compileStatus, 0);
+//		         gl.getGL2().glGetShaderiv(fragmentShaderID, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+//
+//		 		errorBuffer = new byte[ERROR_BUFFER_SIZE]; 
+//		 		messageLength = new int[1]; 
+//		 		gl.getGL2().glGetShaderInfoLog(fragmentShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
+//		 		t = new String(errorBuffer);
+//		    	
+//		    	 int glProgram = gl.getGL2().glCreateProgram();
+//		    	 gl.getGL2().glAttachShader(glProgram, vertexShaderID);
+//		    	 gl.getGL2().glAttachShader(glProgram, fragmentShaderID);
+//		    	 gl.getGL2().glLinkProgram(glProgram);
+//		    	
+//		    	 gl.getGL2().glDetachShader(glProgram, vertexShaderID);
+//		    	 gl.getGL2().glDetachShader(glProgram, fragmentShaderID);
+//		    		
+//		    	 gl.getGL2().glDeleteShader(vertexShaderID);
+//		    	 gl.getGL2().glDeleteShader(fragmentShaderID);
+//
+//		    	 gl.getGL2().glUseProgram(glProgram);
+//		    	 
+//		    	 
+//		    	 int id = gl.getGL2().glGetUniformLocation(glProgram, "modelViewMatrix");
+//		         gl.getGL2().glUniform4fv(id, 1, mvmatrix, 0);
+//		         
+//		         int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
+//		         gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
 				
 				
 				if (!hasMountedOnce) {
@@ -410,7 +416,7 @@ public static class CubeVBO extends VBOBuilder {
 		c.z = zMin;
 
 		putCoord(vertices, c);
-		putColor(vertices, new Color(0,1,0));
+		putColor(vertices, new Color(0,255,0));
 		
 		indices.put(size++);
 		c.x = xMax;
@@ -418,7 +424,7 @@ public static class CubeVBO extends VBOBuilder {
 		c.z = zMin;
 
 		putCoord(vertices, c);
-		putColor(vertices, new Color(1,1,0));
+		putColor(vertices, new Color(255,255,0));
 		
 		indices.put(size++);
 		c.x = xMax;
@@ -426,7 +432,7 @@ public static class CubeVBO extends VBOBuilder {
 		c.z = zMin;
 
 		putCoord(vertices, c);
-		putColor(vertices, new Color(1,0,0));
+		putColor(vertices, new Color(255,0,0));
 
 
 		vertices.rewind();
