@@ -35,6 +35,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     
     public Texture3D(Buffer buffer, int[] shape) {
     	this.buffer = buffer;
+    	buffer.rewind();
     	this.shape = shape;
     	bbox = new BoundingBox3d(0,1,0,1,0,1);
     	quad = new Quad();
@@ -60,17 +61,26 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
 	}
 	
 	public void bind(final GL gl) throws GLException {
+		gl.glEnable(GL2.GL_TEXTURE_3D);
         validateTexID(gl, true);
         gl.glBindTexture(GL2.GL_TEXTURE_3D, texID);
+        gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP);
+        gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
+        gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP);
+        gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MAG_FILTER,
+                GL.GL_NEAREST);
+        gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MIN_FILTER,
+                GL.GL_NEAREST);
         setTextureData(gl,buffer,shape);
     }
 	
 	public void setTextureData(final GL gl, Buffer buffer, int[] shape) {
 		gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
-		gl.getGL2().glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL.GL_LUMINANCE, shape[0], shape[1], shape[2], 0, GL2ES2.GL_LUMINANCE, GL.GL_BYTE, buffer);
-		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE);
-		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE);
-		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL.GL_CLAMP_TO_EDGE);
+		gl.getGL2().glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL.GL_RGB, shape[0], shape[1], shape[2], 0, GL.GL_RGB, GL.GL_UNSIGNED_BYTE, buffer);
+//		gl.getGL2().glTexSubImage3D(GL2.GL_TEXTURE_3D,0,0, 0,0, shape[0], shape[1], shape[2], GL2ES2.GL_RGBA, GL.GL_UNSIGNED_BYTE, buffer);
+//		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE);
+//		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE);
+//		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL.GL_CLAMP_TO_EDGE);
 	}
 	
 	private boolean validateTexID(final GL gl, final boolean throwException) {
@@ -106,7 +116,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
 //    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
-    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor; test.x = 0.5;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; if (value.b == 0.0) {vFragColor = vec4(1,0,0,1);} else {vFragColor = value;}}";
+    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor; test.z = 0.3;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; vFragColor = value;}";
     
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
     	gl.getGL2().glCompileShader(vertexShaderID);
