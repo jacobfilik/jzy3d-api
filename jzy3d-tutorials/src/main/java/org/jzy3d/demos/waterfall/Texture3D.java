@@ -51,6 +51,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
 		if (!mounted) {
 			shapeVBO.mount(gl);
 			bind(gl);
+			mounted = true;
 		}
 		
 	}
@@ -68,15 +69,15 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
         gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP);
         gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP);
         gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MAG_FILTER,
-                GL.GL_NEAREST);
+                GL.GL_LINEAR);
         gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_MIN_FILTER,
-                GL.GL_NEAREST);
+                GL.GL_LINEAR);
         setTextureData(gl,buffer,shape);
     }
 	
 	public void setTextureData(final GL gl, Buffer buffer, int[] shape) {
 		gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
-		gl.getGL2().glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL.GL_RGB, shape[0], shape[1], shape[2], 0, GL.GL_RGB, GL.GL_UNSIGNED_BYTE, buffer);
+		gl.getGL2().glTexImage3D(GL2.GL_TEXTURE_3D, 0, GL.GL_RGB, shape[2], shape[1], shape[0], 0, GL.GL_RGB, GL.GL_UNSIGNED_BYTE, buffer);
 //		gl.getGL2().glTexSubImage3D(GL2.GL_TEXTURE_3D,0,0, 0,0, shape[0], shape[1], shape[2], GL2ES2.GL_RGBA, GL.GL_UNSIGNED_BYTE, buffer);
 //		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE);
 //		gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE);
@@ -116,7 +117,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
 //    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
-    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor; test.z = 0.3;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; vFragColor = value;}";
+    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; vFragColor = value;}";
     
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
     	gl.getGL2().glCompileShader(vertexShaderID);
@@ -375,7 +376,7 @@ public static class CubeVBO extends VBOBuilder {
 
 	@Override
 	public void load(GL gl, DrawableVBO drawable) throws Exception {
-		FloatVBO vbo = initFloatVBO(drawable, true, 4);
+		FloatVBO vbo = initFloatVBO(drawable, true, 24);
 		fillFromArray(drawable,  xMin,  xMax,  yMin,  yMax,  zMin,  zMax, vbo);
         drawable.setData(gl, vbo);
 	}
@@ -411,7 +412,7 @@ public static class CubeVBO extends VBOBuilder {
 
 		int size = 0;
 		Coord3d c = new Coord3d();
-
+		//first
 		indices.put(size++);
 		c.x = xMin;
 		c.y = yMin;
@@ -443,8 +444,170 @@ public static class CubeVBO extends VBOBuilder {
 
 		putCoord(vertices, c);
 		putColor(vertices, new Color(255,0,0));
+		//second
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMin;
+		c.z = zMin;
 
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,0,0));
+		
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMax;
+		c.z = zMin;
 
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,255,0));
+		
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMax;
+		c.z = zMax;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,255,255));
+		
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMin;
+		c.z = zMax;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,0,255));
+
+		//third
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMin;
+		c.z = zMin;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,0,0));
+		
+		indices.put(size++);
+		c.x = xMin;
+		c.y = yMin;
+		c.z = zMax;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(0,0,255));
+		
+		indices.put(size++);
+		c.x = xMax;
+		c.y = yMin;
+		c.z = zMax;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(255,0,255));
+		
+		indices.put(size++);
+		c.x = xMax;
+		c.y = yMin;
+		c.z = zMin;
+
+		putCoord(vertices, c);
+		putColor(vertices, new Color(255,0,0));
+		
+		//first - 2
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMax;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,255,255));
+				
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMin;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,0,255));
+				
+				indices.put(size++);
+				c.x = xMin;
+				c.y = yMin;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(0,0,255));
+				
+				indices.put(size++);
+				c.x = xMin;
+				c.y = yMax;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(0,255,255));
+				//second -2
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMax;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,255,255));
+				
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMin;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,0,255));
+				
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMin;
+				c.z = zMin;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,0,0));
+				
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMax;
+				c.z = zMin;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,255,0));
+
+				//third -2
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMax;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,255,255));
+				
+				indices.put(size++);
+				c.x = xMax;
+				c.y = yMax;
+				c.z = zMin;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(255,255,0));
+				
+				indices.put(size++);
+				c.x = xMin;
+				c.y = yMax;
+				c.z = zMin;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(0,255,0));
+				
+				indices.put(size++);
+				c.x = xMin;
+				c.y = yMax;
+				c.z = zMax;
+
+				putCoord(vertices, c);
+				putColor(vertices, new Color(0,255,255));
+		
 		vertices.rewind();
 		indices.rewind();
 		vbo.setBounds(new BoundingBox3d(xMin, yMin, xMax, yMax, zMin, zMax));

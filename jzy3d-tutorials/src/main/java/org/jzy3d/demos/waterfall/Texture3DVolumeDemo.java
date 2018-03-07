@@ -26,7 +26,7 @@ public class Texture3DVolumeDemo extends AbstractAnalysis {
     @Override
     public void init() {
 
-    	chart = AWTChartComponentFactory.chart(Quality.Advanced, getCanvasType());
+    	chart = AWTChartComponentFactory.chart(Quality.Intermediate, getCanvasType());
 
     	chart.getView();
 
