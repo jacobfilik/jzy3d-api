@@ -20,6 +20,7 @@ import org.jzy3d.plot3d.transform.Transform;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GL2ES2;
+import com.jogamp.opengl.GL2GL3;
 import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.glu.GLU;
 
@@ -107,6 +108,8 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	float mvmatrix[] = new float[16];
     	float projmatrix[] = new float[16];
     	
+    	Coord3d eye = cam.getEye();
+    	
     	String glGetString = gl.glGetString(GL.GL_VERSION);
     	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
     	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
@@ -117,7 +120,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
 //    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
-    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor;vec4 value = texture3D(volumeTexture,test.xyz); value.a = 1; vFragColor = value;}";
+    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor;vec4 value = texture3D(volumeTexture,test.xyz); value = 1-value;value.a = 1-value.r; vFragColor = value;}";
     
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
     	gl.getGL2().glCompileShader(vertexShaderID);
@@ -167,6 +170,10 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
          
          int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
          gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
+         
+       gl.glEnable(GL2.GL_BLEND);
+          gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+          gl.getGL2().glPolygonMode(GL.GL_FRONT, GL2GL3.GL_FILL);
 		
          shapeVBO.draw(gl, glu, cam);
          
