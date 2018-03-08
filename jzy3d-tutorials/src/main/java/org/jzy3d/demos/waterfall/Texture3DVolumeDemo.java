@@ -9,6 +9,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jzy3d.analysis.AbstractAnalysis;
 import org.jzy3d.analysis.AnalysisLauncher;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
+import org.jzy3d.colors.Color;
 import org.jzy3d.colors.ColorMapper;
 import org.jzy3d.colors.colormaps.ColorMapRainbow;
 import org.jzy3d.maths.Coord3d;
@@ -29,6 +30,7 @@ public class Texture3DVolumeDemo extends AbstractAnalysis {
     	chart = AWTChartComponentFactory.chart(Quality.Intermediate, getCanvasType());
 
     	chart.getView();
+    	chart.getView().setBackgroundColor(Color.WHITE);
 
     	int[] shape = {99,99,90};
     	short[] s = null;

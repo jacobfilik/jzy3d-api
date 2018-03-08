@@ -1,8 +1,15 @@
 package org.jzy3d.demos.waterfall;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.jzy3d.colors.Color;
 import org.jzy3d.maths.BoundingBox3d;
@@ -15,6 +22,7 @@ import org.jzy3d.plot3d.primitives.vbo.buffers.FloatVBO;
 import org.jzy3d.plot3d.primitives.vbo.builders.VBOBuilder;
 import org.jzy3d.plot3d.primitives.vbo.drawable.DrawableVBO;
 import org.jzy3d.plot3d.rendering.view.Camera;
+import org.jzy3d.plot3d.rendering.view.ViewportConfiguration;
 import org.jzy3d.plot3d.transform.Transform;
 
 import com.jogamp.opengl.GL;
@@ -108,20 +116,41 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     	float mvmatrix[] = new float[16];
     	float projmatrix[] = new float[16];
     	
+    	
+    	
     	Coord3d eye = cam.getEye();
+    	eye = eye.sub(cam.getTarget());
+    	eye = eye.normalizeTo(1);
+//    	System.out.println(eye);
     	
     	String glGetString = gl.glGetString(GL.GL_VERSION);
     	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
     	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
     	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
+    	
+//    	System.out.println(Arrays.toString(projmatrix));
+//    	System.out.println(Arrays.toString(mvmatrix));
 
     	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
     	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
 //    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 value = texture3D(volumeTexture,vVaryingColor); vFragColor = vec4(255.0,0.5,0.5,255.0);}";
-    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor;vec4 value = texture3D(volumeTexture,test.xyz); value = 1-value;value.a = 1-value.r; vFragColor = value;}";
+//    	String  fragment = "#version 130\n in vec4 vVaryingColor;uniform sampler3D volumeTexture; out vec4 vFragColor; void main() { vec4 test = vVaryingColor;vec4 value = texture3D(volumeTexture,test.xyz); value = 1-value;value.a = 1-value.r; if (test.z == 1.0) {vFragColor=vec4(1,0,0,1);}else{vFragColor = value;}}";
     
+    	URL file = getClass().getResource("volume.frag");
+    	File f = new File(file.getPath());
+//    	String p = "C://Users//vdp96513//Documents//code//jzy3d//jzy3d-api//jzy3d-tutorials//target//classes//org//jzy3d//demos//waterfall//volume.frag";
+    	String fragment = "";
+    	try {
+			byte[] encoded = Files.readAllBytes(Paths.get(f.getAbsolutePath()));
+			 fragment = new String(encoded, Charset.defaultCharset());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	
     	gl.getGL2().glShaderSource(vertexShaderID, 1, new String[] {vertex} , null);
     	gl.getGL2().glCompileShader(vertexShaderID);
     	
@@ -171,9 +200,13 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
          int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
          gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
          
+         int ide = gl.getGL2().glGetUniformLocation(glProgram, "eye");
+         gl.getGL2().glUniform3fv(ide, 1, eye.toArray(), 0);
+         
        gl.glEnable(GL2.GL_BLEND);
           gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
           gl.getGL2().glPolygonMode(GL.GL_FRONT, GL2GL3.GL_FILL);
+          gl.glCullFace(gl.GL_BACK);
 		
          shapeVBO.draw(gl, glu, cam);
          
