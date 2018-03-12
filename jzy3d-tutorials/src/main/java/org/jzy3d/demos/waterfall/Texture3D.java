@@ -1,5 +1,6 @@
 package org.jzy3d.demos.waterfall;
 
+import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -42,6 +43,8 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
     private Quad quad;
     private DrawableVBO shapeVBO;
     
+    private int program;
+    
     public Texture3D(Buffer buffer, int[] shape) {
     	this.buffer = buffer;
     	buffer.rewind();
@@ -59,6 +62,7 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
 	public void mount(GL gl) {
 		if (!mounted) {
 			shapeVBO.mount(gl);
+			buildProgram(gl);
 			bind(gl);
 			mounted = true;
 		}
@@ -108,30 +112,9 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
         }
         return 0 != texID;
     }
-
-	@Override
-	public void draw(GL gl, GLU glu, Camera cam) {
-		doTransform(gl, glu, cam);
-    	
-    	float mvmatrix[] = new float[16];
-    	float projmatrix[] = new float[16];
-    	
-    	
-    	
-    	Coord3d eye = cam.getEye();
-    	eye = eye.sub(cam.getTarget());
-    	eye = eye.normalizeTo(1);
-//    	System.out.println(eye);
-    	
-    	String glGetString = gl.glGetString(GL.GL_VERSION);
-    	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
-    	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
-    	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
-    	
-//    	System.out.println(Arrays.toString(projmatrix));
-//    	System.out.println(Arrays.toString(mvmatrix));
-
-    	int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
+	
+	private void buildProgram(GL gl) {
+		int vertexShaderID = gl.getGL2().glCreateShader(GL2.GL_VERTEX_SHADER);
     	int fragmentShaderID = gl.getGL2().glCreateShader(GL2.GL_FRAGMENT_SHADER);
     	
     	String  vertex = "#version 130\n uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;in vec4 vt; out vec4 vVaryingColor; void main() { vVaryingColor=gl_Color; gl_Position=gl_ProjectionMatrix*gl_ModelViewMatrix*vt;}";
@@ -180,27 +163,52 @@ public class Texture3D extends AbstractDrawable implements IGLBindedResource{
  		gl.getGL2().glGetShaderInfoLog(fragmentShaderID, ERROR_BUFFER_SIZE, messageLength, 0, errorBuffer, 0);
  		t = new String(errorBuffer);
     	
-    	 int glProgram = gl.getGL2().glCreateProgram();
-    	 gl.getGL2().glAttachShader(glProgram, vertexShaderID);
-    	 gl.getGL2().glAttachShader(glProgram, fragmentShaderID);
-    	 gl.getGL2().glLinkProgram(glProgram);
+    	 program= gl.getGL2().glCreateProgram();
+    	 gl.getGL2().glAttachShader(program, vertexShaderID);
+    	 gl.getGL2().glAttachShader(program, fragmentShaderID);
+    	 gl.getGL2().glLinkProgram(program);
     	
-    	 gl.getGL2().glDetachShader(glProgram, vertexShaderID);
-    	 gl.getGL2().glDetachShader(glProgram, fragmentShaderID);
+    	 gl.getGL2().glDetachShader(program, vertexShaderID);
+    	 gl.getGL2().glDetachShader(program, fragmentShaderID);
     		
     	 gl.getGL2().glDeleteShader(vertexShaderID);
     	 gl.getGL2().glDeleteShader(fragmentShaderID);
+	}
 
-    	 gl.getGL2().glUseProgram(glProgram);
+	@Override
+	public void draw(GL gl, GLU glu, Camera cam) {
+		doTransform(gl, glu, cam);
+    	
+    	float mvmatrix[] = new float[16];
+    	float projmatrix[] = new float[16];
+    	
+    	
+    	
+    	Coord3d eye = cam.getEye();
+    	eye = eye.sub(cam.getTarget());
+    	eye = eye.normalizeTo(1);
+//    	System.out.println(eye);
+    	
+    	String glGetString = gl.glGetString(GL.GL_VERSION);
+    	String glGetString2 = gl.glGetString(GL2.GL_SHADING_LANGUAGE_VERSION);
+    	gl.getGL2().glGetFloatv(GL2.GL_MODELVIEW_MATRIX, mvmatrix, 0);
+    	gl.getGL2().glGetFloatv(GL2.GL_PROJECTION_MATRIX, projmatrix, 0);
+    	
+//    	System.out.println(Arrays.toString(projmatrix));
+//    	System.out.println(Arrays.toString(mvmatrix));
+
+    	
+
+    	 gl.getGL2().glUseProgram(program);
     	 
     	 
-    	 int id = gl.getGL2().glGetUniformLocation(glProgram, "modelViewMatrix");
+    	 int id = gl.getGL2().glGetUniformLocation(program, "modelViewMatrix");
          gl.getGL2().glUniform4fv(id, 1, mvmatrix, 0);
          
-         int idp = gl.getGL2().glGetUniformLocation(glProgram, "projectionMatrix");
+         int idp = gl.getGL2().glGetUniformLocation(program, "projectionMatrix");
          gl.getGL2().glUniform4fv(idp, 1, projmatrix, 0);
          
-         int ide = gl.getGL2().glGetUniformLocation(glProgram, "eye");
+         int ide = gl.getGL2().glGetUniformLocation(program, "eye");
          gl.getGL2().glUniform3fv(ide, 1, eye.toArray(), 0);
          
        gl.glEnable(GL2.GL_BLEND);
